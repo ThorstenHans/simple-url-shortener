@@ -21,12 +21,12 @@ pub(crate) fn get_all_links(_req: Request, _params: Params) -> Result<Response> 
         .body(Some(payload.into()))?)
 }
 
-pub(crate) fn open_link(_req: Request, params: Params) -> Result<Response> {
+pub(crate) fn open_link(req: Request, params: Params) -> Result<Response> {
     match params.get("term") {
         Some(term) => {
             let store = Store::open_default()?;
             if !store.exists(term).unwrap_or(false) {
-                return Ok(http::Response::builder().status(StatusCode::NOT_FOUND).body(None)?);
+                return not_found(req, params);
             }
             let value = store.get(term)?;
             Ok(http::Response::builder()
@@ -34,7 +34,7 @@ pub(crate) fn open_link(_req: Request, params: Params) -> Result<Response> {
             .header("Location", value)
             .body(None)?)
         },
-        None => Ok(http::Response::builder().status(StatusCode::NOT_FOUND).body(None)?)
+        None => not_found(req, params)
     }
 
 }
@@ -60,6 +60,7 @@ pub(crate) fn not_found(_req: Request, _params: Params) -> Result<Response> {
     Ok(http::Response::builder().status(StatusCode::NOT_FOUND).body(None)?)
 }
 
+/// returns a random string of 5 alphanumeric characters
 fn get_short() -> String {
     thread_rng()
         .sample_iter(&Alphanumeric)
